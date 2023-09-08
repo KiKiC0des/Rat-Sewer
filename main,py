@@ -1,0 +1,403 @@
+import asyncio
+import datetime
+import os
+import discord
+from discord.ui import Button, View
+import humanfriendly
+from discord.ext import commands
+from datetime import datetime
+
+intents = discord.Intents.all()
+bot = commands.Bot(command_prefix = '>', intents=intents)
+bot.remove_command("help")
+
+@bot.command()
+async def vote(ctx):
+  button = Button(label="Vote", url="https://top.gg/servers/1147568289594232953")
+
+  view = View()
+  view.add_item(button)
+  embed = discord.Embed(
+    title="Vote for us!"
+  )
+  await ctx.send(embed=embed, view=view)
+
+
+snipe_message_content = None
+snipe_message_author = None
+
+@bot.event
+async def on_message_delete(message):
+  embed = discord.Embed(
+    title=f"{message.author} has deleted a message | {message.author.id}",
+    description=f"`{message.content}`"
+  )
+  channel = bot.get_channel(1147573462257385502)
+  await channel.send(embed=embed)
+  
+  global snipe_message_content
+  global snipe_message_author
+
+  snipe_message_content = message.content
+  snipe_message_author = message.author
+  await asyncio.sleep(60)
+  snipe_message_author = None
+  snipe_message_content = None
+
+@bot.event
+async def on_message_edit(message_before, message_after):
+  embed=discord.Embed(title=f"{message_before.author.name} has edited a message | {message_before.author.id}")
+  embed.add_field(name="Before", value=f"{message_before.content}", inline=False)
+  embed.add_field(name="After", value=f"{message_after.content}", inline=False)
+  channel = bot.get_channel(1147573462257385502)
+  await channel.send(embed=embed)
+  
+@bot.command()
+async def snipe(message):
+  if snipe_message_content == None:
+    await message.channel.send("There's nothing to snipe")
+  else:
+    embed=discord.Embed(
+      color=(discord.Colour.random()),
+      description=f"{snipe_message_content}"
+    )
+    embed.set_author(name=f"Sniped message by {snipe_message_author}")
+    await message.channel.send(embed=embed)
+
+@bot.event
+async def on_ready():
+  await bot.change_presence(activity=discord.Game(name=">help"))
+  print("bot is up")
+
+@bot.event
+async def on_command_error(ctx,error):
+  if isinstance(error,commands.MissingPermissions):
+    embed=discord.Embed(
+      title="You can't use that command / You don't have the permission(s) to use that command"
+    )
+    await ctx.send(embed=embed)
+    await ctx.message.delete()
+  elif isinstance(error,commands.MissingRequiredArgument):
+    embed=discord.Embed(
+      title="Missing required arguments"
+    )
+    await ctx.send(embed=embed)
+  elif isinstance(error, commands.DisabledCommand):
+    await ctx.send("command is disabled")
+    return
+    await ctx.message.delete()
+
+@bot.group(invoke_without_command=True)
+async def help(ctx):
+  embed = discord.Embed(
+    title="Help",
+    description="Use >help <command>help for extended information on a command\n **>help kickhelp**"
+  )
+  embed.add_field(name="Moderation", value="kick, ban, unban, clear, lock, unlock, mute, unmute, slowmode, basement")
+  embed.add_field(name="Other/Miscellanous", value="ping, say, avatar (av), serverinfo, sayemb, snipe, vote")
+  await ctx.send(embed=embed)
+
+@help.command()
+async def votehelp(ctx):
+  embed=discord.Embed(title="Vote", description="Vote for us on top.gg")
+  embed.add_field(name="**Syntax**", value=">vote")
+  await ctx.send(embed=embed)
+
+@help.command()
+async def basementhelp(ctx):
+  embed=discord.Embed(title="Basement", description="Sends somebody to the basement")
+  embed.add_field(name="**Syntax**", value=">basement <member>")
+  await ctx.send(embed=embed)
+
+@help.command()
+async def lockhelp(ctx):
+  embed = discord.Embed(title="Lock (lockdwon)", description="Locks down the channel")
+  embed.add_field(name="**Syntax**", value=">lock [channel]")
+  await ctx.send(embed=embed)
+
+@help.command()
+async def snipehelp(ctx):
+  embed = discord.Embed(title="Snipe", description="Snipes a deleted message")
+  embed.add_field(name="**Syntax**", value=">snipe")
+  await ctx.send(embed=embed)
+
+@help.command()
+async def mutehelp(ctx):
+  embed = discord.Embed(title="Mute", description="Mutes a member")
+  embed.add_field(name="**Syntax**", value=">mute <member> [reason]")
+  await ctx.send(embed=embed)
+
+@help.command()
+async def unmutehelp(ctx):
+  embed = discord.Embed(title="Unmute", description="Unmutes a member")
+  embed.add_field(name="**Syntax**", value=">unmute <member> [reason]")
+  await ctx.send(embed=embed)
+
+@help.command()
+async def unlockhelp(ctx):
+  embed = discord.Embed(title="Unlock (lockdwon)", description="Unlocks the channel")
+  embed.add_field(name="**Syntax**", value=">unlock [channel]")
+  await ctx.send(embed=embed)
+
+@help.command()
+async def serverinfohelp(ctx):
+  embed = discord.Embed(title="ServerInfo", description="Shows info about the server")
+  embed.add_field(name="**Syntax**", value=">serverinfo")
+  await ctx.send(embed=embed)
+
+@help.command()
+async def avatarhelp(ctx):
+  embed = discord.Embed(title="Avatar (av)", description="shows you a member's avatar")
+  embed.add_field(name="**Syntax**", value=">avatar <member> | >av <member>")
+  await ctx.send(embed=embed)
+
+@help.command()
+async def kickhelp(ctx):
+  embed = discord.Embed(title="Kick", description="Kicks a member from the server")
+  embed.add_field(name="**Syntax**", value=">kick <member> [reason]")
+  await ctx.send(embed=embed)
+
+@help.command()
+async def banhelp(ctx):
+  embed = discord.Embed(title="Ban", description="Bans a member from the server")
+  embed.add_field(name="**Syntax**", value=">ban <member> [reason]")
+  await ctx.send(embed=embed)
+
+@help.command()
+async def unbanhelp(ctx):
+  embed = discord.Embed(title="Unban", description="Unbans a member from the server")
+  embed.add_field(name="**Syntax**", value=">unban <member>#<member_discriminator>")
+  await ctx.send(embed=embed)
+
+@help.command()
+async def pinghelp(ctx):
+  embed = discord.Embed(title="Ping", description="The bot responds with 'pong'")
+  embed.add_field(name="**Syntax**", value=">ping")
+  await ctx.send(embed=embed)
+
+@help.command()
+async def clearhelp(ctx):
+  embed = discord.Embed(title="Clear", description="Clears a certain amount of messages")
+  embed.add_field(name="**Syntax**", value=">clear <amount of messages>")
+  await ctx.send(embed=embed)
+
+@help.command()
+async def sayhelp(ctx):
+  embed = discord.Embed(title="Say", description="Make the bot say whatever you want")
+  embed.add_field(name="**Syntax**", value=">say <message>")
+  await ctx.send(embed=embed)
+
+@help.command()
+async def sayembhelp(ctx):
+  embed = discord.Embed(title="Say (embed)", description="Make the bot say whatever you want in an embed")
+  embed.add_field(name="**Syntax**", value=">sayemb <message>")
+  await ctx.send(embed=embed)
+
+@help.command()
+async def slowmodehelp(ctx):
+  embed = discord.Embed(title="Slowmode", description="Set slowmode delay")
+  embed.add_field(name="**Syntax**", value=">slowmode <slowmode_delay>")
+  await ctx.send(embed=embed)
+
+@bot.command()
+@commands.has_permissions(manage_guild=True)
+async def slowmode(ctx,time:int):
+  try:
+    if time == 0:
+      await ctx.send('Slowmode off')
+      await ctx.channel.edit(slowmode_delay=0)
+    elif time > 216600:
+      await ctx.send('You cant put the slowmode delay above  hours')
+      return
+    else:
+      await ctx.channel.edit(slowmode_delay=time)
+      await ctx.send("Slowmode set")
+  except Exception:
+    await ctx.send("Something went wrong, couldnt set slowmode")
+
+@bot.command()
+@commands.has_permissions(manage_guild=True)
+async def say(ctx, *, message):
+  if message == None:
+    await ctx.reply("say someting bozo")
+  else:
+    await ctx.send(message)
+    await ctx.message.delete()
+
+@bot.command()
+@commands.has_permissions(manage_guild=True)
+async def basement(ctx, member : discord.Member):
+  guild = ctx.guild
+  basement = discord.utils.get(guild.roles, name= "basement")
+
+  await member.add_roles(basement)
+  await member.send("you got sent to the basement... good luck")
+  await ctx.send(f"{member.mention} got sent to the basement :tfcat:")
+
+@bot.command()
+@commands.has_permissions(manage_guild=True)
+async def mute(ctx, member : discord.Member, *, reason):
+  guild = ctx.guild
+  muteRole = discord.utils.get(guild.roles, name="muted (laugh at this user)")
+
+  await member.add_roles(muteRole, reason=reason)
+  await member.send("get muted lol")
+  await ctx.send(f"{member.mention} has been muted lol laugh at this bozo")
+
+@bot.command()
+@commands.has_permissions(manage_guild=True)
+async def unmute(ctx, member: discord.Member):
+  guild = ctx.guild
+  muteRole = discord.utils.get(guild.roles, name="muted (laugh at this user)")
+
+  await member.remove_roles(muteRole)
+  await ctx.send(f"{member.name} got unmuted")
+  await member.send("bro you got unmuted")
+  
+
+@bot.command()
+async def toggle(ctx, *, command):
+  if not ctx.author.id == 1124369709110923264:
+    return
+  command = bot.get_command(command)
+  if command == None:
+    await ctx.send("command not found")
+  elif ctx.command == command:
+    await ctx.send("you cant disable this command")
+  else:
+    command.enabled = not command.enabled
+    ternany = "enabled" if command.enabled else "disabled"
+    await ctx.send(f"{command.qualified_name} has been {ternany}")
+
+@bot.command()
+@commands.has_permissions(manage_guild=True)
+async def lock(ctx, channel : discord.TextChannel=None, setting = None):
+  if setting == '--server':
+    for channel in ctx.guild.channels:
+      await channel.set_permissions(ctx.guild.default_role, reason=f"{ctx.author.name} locked the server", send_messages=False)
+    await ctx.send("Server locked. Wait for the mods to unlock to be able to talk again")
+    return
+  if channel is None:
+    channel = ctx.message.channel
+  await channel.set_permissions(ctx.guild.default_role, reason=f"{ctx.author.name} locked {channel.name}", send_messages=False)
+  await ctx.send("channel locked")
+
+@bot.command()
+@commands.has_permissions(manage_guild=True)
+async def unlock(ctx, channel : discord.TextChannel=None, setting=None):
+  if setting == '--server':
+    for channel in ctx.guild.channels:
+      await channel.set_permissions(ctx.guild.default_role, reason=f"{ctx.author.name} unlocked the server", send_messages=True)
+    await ctx.send("Server unlocked")
+    return
+  if channel is None:
+    channel = ctx.message.channel
+  await channel.set_permissions(ctx.guild.default_role, reason=f"{ctx.author.name} locked {channel.name}", send_messages=True)
+  await ctx.send("channel unlocked")
+
+@bot.command()
+async def sayemb(ctx, *, saymsg=None):
+  if saymsg == None:
+    return await ctx.send("Type smthn for me to say bozo (>say kys)")
+  embed = discord.Embed(
+    description=f"{saymsg}"
+  )
+  await ctx.send(embed=embed)
+    
+@bot.command()
+async def serverinfo(ctx):
+  role_count = len(ctx.guild.roles)
+
+  embed = discord.Embed(
+    title="Rat Sewer",
+    timestamp=ctx.message.created_at,
+    color=0x2f3136
+  )
+  embed.add_field(name="Member count", value=ctx.guild.member_count, inline=False)
+  embed.add_field(name="Verification level", value=str(ctx.guild.verification_level), inline=False)
+  embed.add_field(name="Highest role", value=ctx.guild.roles[-1], inline=False)
+  embed.add_field(name="Role count", value=str(role_count), inline=False)
+  await ctx.send(embed=embed)
+
+@bot.command(aliases=['av'])
+async def avatar(ctx, member:discord.Member):
+  if member == None:
+    member = ctx.author
+
+  memberAv = member.avatar.url
+
+  embed=discord.Embed(
+    title=f"{member.name}'s avatar"
+  )
+  embed.set_image(url = memberAv)
+  await ctx.send(embed=embed)
+
+@bot.command()
+async def ping(ctx):
+  await ctx.send("pong")
+
+@bot.command()
+@commands.has_permissions(manage_guild=True)
+async def infosend(ctx):
+  embed = discord.Embed(
+    description="× use common sense\n× minimum use of slurs\n× no nsfw/gore\n× follow tos & guidelines"
+  )
+  await ctx.send(embed=embed)
+
+@bot.command()
+@commands.has_permissions(kick_members=True)
+async def unban(ctx, *, member):
+  banned_users = await ctx.guild.bans()
+  member_name, member_discriminator = member.split('#')
+
+  for ban_entry in banned_users:
+    user = ban_entry.user
+
+    if(user.name, user.discriminator) == (member_name, member_discriminator):
+      await ctx.guild.unban(user)
+      embed = discord.Embed(
+        title=f"{user.name} is unbanned"
+      )
+      await ctx.send(embed=embed)
+      return
+
+@bot.command()
+@commands.has_permissions(manage_messages=True)
+async def clear(ctx, amount=11):
+  amount = amount+1
+  if amount > 101:
+    embed = discord.Embed(
+      title="I can't delete more than 100 messages"
+    )
+    await ctx.send(embed=embed)
+  else:
+    await ctx.channel.purge(limit=amount)
+    embed = discord.Embed(
+      title="cleared messages"
+    )
+    await ctx.send(embed=embed)
+
+@bot.command()
+@commands.has_permissions(manage_guild=True)
+async def sendreact(ctx):
+  embed=discord.Embed(
+    title="React with the emojis below to get a role",
+    description="🏐 - miscellanous\n🧟 - chat revive\n🎮 - events\n🎉 - giveaways\n💢 - debates",
+    color=0x2f3132
+  )
+  await ctx.send(embed=embed)
+
+@bot.command()
+@commands.has_permissions(ban_members=True)
+async def ban(ctx, member:discord.Member, reason="no reason provided"):
+  await member.ban(reason=reason)
+  await ctx.send(f"{member.mention} got banned L bozo")
+
+@bot.command()
+@commands.has_permissions(kick_members=True)
+async def kick(ctx, member:discord.Member):
+  await member.kick()
+  await ctx.send(f"{member.mention} got kicked L bozo")
+
+
+bot.run("token")
