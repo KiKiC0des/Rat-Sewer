@@ -1,2 +1,2 @@
 # Rat-Sewer
-Code for rat sewe'rs bot
+Code for rat sewer's bot
